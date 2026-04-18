@@ -4,7 +4,7 @@ const CRAB_CONFIG = {
   // 应用信息
   app: {
     name: '螃蟹助手',
-    version: '0.1.0',
+    version: '0.2.0',
     emoji: '🦀',
     tagline: '钳住一切，记忆永恒'
   },
@@ -12,17 +12,25 @@ const CRAB_CONFIG = {
   // API 配置 - 支持 OpenAI 兼容接口（多模型切换）
   api: {
     // 默认使用 OpenAI 兼容接口
-    baseUrl: '',       // 用户自行配置，如 https://api.openai.com/v1
+    baseUrl: '',       // 用户自行配置
     apiKey: '',        // 用户自行配置
     model: '',         // 默认模型
     // 预设模型列表
     presets: [
+      // ===== 本地模型 =====
+      { id: 'lm-studio', name: '🦎 LM Studio (本地)', provider: 'lm-studio', baseUrl: 'http://localhost:1234/v1', model: '', icon: '🦎' },
+      // ===== OpenAI =====
       { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
       { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai' },
+      { id: 'o3', name: 'GPT-o3', provider: 'openai' },
+      // ===== Anthropic =====
       { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'anthropic' },
+      { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet', provider: 'anthropic' },
+      // ===== 国内 =====
       { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek' },
       { id: 'qwen-plus', name: '通义千问+', provider: 'aliyun' },
       { id: 'glm-4', name: '智谱GLM-4', provider: 'zhipu' },
+      { id: 'moonshot-v1-8k', name: 'Moonshot (Kimi)', provider: 'moonshot' },
     ]
   },
 
@@ -45,5 +53,13 @@ const CRAB_CONFIG = {
       { id: 'search', name: '🔍 联网搜索', desc: '搜索互联网信息' },
       { id: 'todo', name: '📋 待办管理', desc: '管理任务和提醒' },
     ]
+  },
+
+  // LM Studio 配置提示
+  lmStudio: {
+    defaultUrl: 'http://localhost:1234/v1',
+    defaultModel: '本地模型',
+    // LM Studio 连接状态（运行时检测）
+    status: 'unknown', // 'connected' | 'disconnected' | 'unknown'
   }
 };

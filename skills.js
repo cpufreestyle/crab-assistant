@@ -145,7 +145,6 @@ ${relevantMemories.length > 0 ? relevantMemories.map(m => `[${m.category}] ${m.c
         success: true,
         reply,
         usage: data.usage,
-        autoSave,
         relevantMemories: relevantMemories.length,
       };
     } catch (err) {

@@ -11,6 +11,9 @@ const CrabApp = {
       apiKey: '',
       baseUrl: 'https://api.openai.com/v1',
       model: 'gpt-4o-mini',
+      // LM Studio 专用
+      lmStudioConnected: false,
+      lmStudioModels: [],
     },
     sidebarOpen: true,
     settingsOpen: false,
@@ -23,6 +26,9 @@ const CrabApp = {
     this.loadHistory();
     this.bindEvents();
     this.render();
+
+    // 启动时检测 LM Studio 连接状态
+    this.checkLMStudio();
 
     if (this.state.chatHistory.length === 0) {
       this.addMessage('assistant', `🦀 欢迎使用螃蟹助手！
@@ -70,6 +76,38 @@ const CrabApp = {
     memInput?.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') this.doMemorySearch();
     });
+  },
+
+  // ========== LM Studio 检测 ==========
+  async checkLMStudio() {
+    try {
+      const resp = await fetch('http://localhost:1234/v1/models', {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        this.state.config.lmStudioConnected = true;
+        this.state.config.lmStudioModels = (data.data || []).map(m => ({
+          id: m.id,
+          name: m.id,
+        }));
+        this.updateLMStudioIndicator(true);
+      } else {
+        this.state.config.lmStudioConnected = false;
+        this.updateLMStudioIndicator(false);
+      }
+    } catch {
+      this.state.config.lmStudioConnected = false;
+      this.updateLMStudioIndicator(false);
+    }
+  },
+
+  updateLMStudioIndicator(connected) {
+    const indicator = document.getElementById('lmStudioIndicator');
+    if (indicator) {
+      indicator.textContent = connected ? '🟢 LM Studio 已连接' : '🔴 LM Studio 未运行';
+      indicator.style.color = connected ? '#22c55e' : '#ef4444';
+    }
   },
 
   // ========== 核心功能 ==========
@@ -127,12 +165,10 @@ const CrabApp = {
   switchTab(tab) {
     this.state.activeTab = tab;
 
-    // 更新导航
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tab);
     });
 
-    // 切换视图
     const chatArea = document.getElementById('chatArea');
     const memoryPanel = document.getElementById('memoryPanel');
     const inputArea = document.getElementById('inputArea');
@@ -226,33 +262,136 @@ const CrabApp = {
 
     if (this.state.settingsOpen) {
       panel.classList.add('open');
+
+      // 动态生成模型选项 HTML
+      const presets = CRAB_CONFIG.api.presets;
+      const selectedModel = this.state.config.model || '';
+      const selectedBaseUrl = this.state.config.baseUrl || '';
+
+      // 找到当前选中的预设
+      const currentPreset = presets.find(p => p.id === selectedModel);
+
       panel.innerHTML = `
         <h2>⚙️ 设置</h2>
-        <div class="setting-item">
-          <label>API 密钥</label>
-          <input type="password" id="apiKeyInput" value="${this.escapeHtml(this.state.config.apiKey || '')}" placeholder="sk-...">
+
+        <!-- LM Studio 状态 -->
+        <div id="lmStudioIndicator" style="text-align:center;padding:8px 12px;border-radius:8px;background:#1a1a1a;margin-bottom:12px;font-size:13px;">
+          🔄 检测中...
         </div>
+
+        <!-- 快速切换 -->
         <div class="setting-item">
-          <label>API 地址</label>
-          <input type="text" id="baseUrlInput" value="${this.escapeHtml(this.state.config.baseUrl || 'https://api.openai.com/v1')}" placeholder="https://api.openai.com/v1">
-        </div>
-        <div class="setting-item">
-          <label>模型</label>
-          <select id="modelSelect">
-            ${CRAB_CONFIG.api.presets.map(p =>
-              `<option value="${p.id}" ${this.state.config.model === p.id ? 'selected' : ''}>${p.name} (${p.provider})</option>`
-            ).join('')}
+          <label>🤖 模型 / 服务</label>
+          <select id="modelSelect" onchange="CrabApp.onModelChange(this.value)">
+            <optgroup label="🦎 本地模型">
+              ${presets.filter(p => p.provider === 'lm-studio').map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </optgroup>
+            <optgroup label="☁️ OpenAI">
+              ${presets.filter(p => p.provider === 'openai').map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </optgroup>
+            <optgroup label="☁️ Anthropic">
+              ${presets.filter(p => p.provider === 'anthropic').map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </optgroup>
+            <optgroup label="☁️ 国内模型">
+              ${presets.filter(p => ['deepseek','aliyun','zhipu','moonshot'].includes(p.provider)).map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </optgroup>
           </select>
         </div>
-        <div style="margin-top:8px;font-size:12px;color:#6b6b6b;">
-          💡 支持 OpenAI 兼容接口：OpenAI / DeepSeek / 阿里云 / 智谱 等
+
+        <!-- LM Studio 模型选择（动态显示） -->
+        <div id="lmStudioModelSection" class="setting-item" style="display:none;">
+          <label>🦎 本地模型选择</label>
+          <select id="lmStudioModelSelect">
+            <option value="">-- 自动检测 --</option>
+            ${this.state.config.lmStudioModels.map(m => `<option value="${m.id}">${m.name}</option>`).join('')}
+          </select>
+          <div style="font-size:11px;color:#888;margin-top:4px;">
+            💡 需要先在 LM Studio 加载模型才能看到列表
+          </div>
         </div>
+
+        <!-- API 地址 -->
+        <div class="setting-item" id="baseUrlSection">
+          <label>🔗 API 地址</label>
+          <input type="text" id="baseUrlInput" value="${this.escapeHtml(selectedBaseUrl)}" placeholder="https://api.openai.com/v1">
+          <div style="font-size:11px;color:#888;margin-top:4px;">
+            🦎 LM Studio 默认：<code style="background:#222;padding:2px 6px;border-radius:4px;">http://localhost:1234/v1</code>
+          </div>
+        </div>
+
+        <!-- API 密钥 -->
+        <div class="setting-item" id="apiKeySection">
+          <label>🔑 API 密钥</label>
+          <input type="password" id="apiKeyInput" value="${this.escapeHtml(this.state.config.apiKey || '')}" placeholder="${this.state.config.model === 'lm-studio' ? '本地模式无需密钥' : 'sk-...'}">
+          <div style="font-size:11px;color:#888;margin-top:4px;" id="apiKeyHint">
+            🦎 本地 LM Studio 无需密钥；云端 API 需要填写
+          </div>
+        </div>
+
+        <!-- LM Studio 启动提示 -->
+        <div style="background:#1a2a1a;border:1px solid #22c55e33;border-radius:8px;padding:12px;margin:8px 0;font-size:12px;color:#86efac;">
+          <strong>🦎 LM Studio 使用指南：</strong><br>
+          1. 打开 LM Studio<br>
+          2. 左上角搜索下载模型（如 Llama 3.2、Qwen2.5）<br>
+          3. 点击 <b>▶ 连接图标 → Developer</b><br>
+          4. 确保 Server URL 为 <code>http://localhost:1234</code><br>
+          5. 点 "Start Server" 启动本地 API 服务<br>
+          6. 返回这里选择「🦎 LM Studio」即可使用
+        </div>
+
         <button class="save-btn" id="saveSettingsBtn">💾 保存配置</button>
         <button class="save-btn" style="background:#252525;margin-top:8px;" onclick="CrabApp.toggleSettings()">关闭</button>
       `;
+
+      // 设置当前选中
+      const modelSelect = document.getElementById('modelSelect');
+      if (modelSelect) modelSelect.value = selectedModel;
+
+      // 立即更新 LM Studio 指示器
+      this.updateLMStudioIndicator(this.state.config.lmStudioConnected);
+
+      // 初始根据当前模型显示/隐藏字段
+      this.onModelChange(selectedModel);
+
       document.getElementById('saveSettingsBtn')?.addEventListener('click', () => this.saveConfig());
     } else {
       panel.classList.remove('open');
+    }
+  },
+
+  // 切换模型时的联动处理
+  onModelChange(modelId) {
+    const preset = CRAB_CONFIG.api.presets.find(p => p.id === modelId);
+    if (!preset) return;
+
+    const baseUrlInput = document.getElementById('baseUrlInput');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const baseUrlSection = document.getElementById('baseUrlSection');
+    const apiKeySection = document.getElementById('apiKeySection');
+    const lmModelSection = document.getElementById('lmStudioModelSection');
+    const apiKeyHint = document.getElementById('apiKeyHint');
+
+    if (preset.provider === 'lm-studio') {
+      // LM Studio 模式
+      baseUrlInput.value = preset.baseUrl || 'http://localhost:1234/v1';
+      apiKeyInput.value = '';
+      apiKeyInput.placeholder = '本地模式无需密钥';
+      baseUrlSection.style.display = 'none';
+      apiKeySection.style.display = 'none';
+      lmModelSection.style.display = 'block';
+      // 重新检测 LM Studio
+      this.checkLMStudio();
+    } else {
+      // 云端 API 模式
+      baseUrlInput.value = preset.baseUrl || this.state.config.baseUrl || 'https://api.openai.com/v1';
+      apiKeyInput.placeholder = 'sk-...';
+      baseUrlSection.style.display = 'block';
+      apiKeySection.style.display = 'block';
+      lmModelSection.style.display = 'none';
+      if (apiKeyHint) {
+        apiKeyHint.textContent = '☁️ 云端 API 需要填写密钥';
+        apiKeyHint.style.color = '#888';
+      }
     }
   },
 
@@ -260,7 +399,14 @@ const CrabApp = {
     const apiKey = document.getElementById('apiKeyInput')?.value?.trim();
     const baseUrl = document.getElementById('baseUrlInput')?.value?.trim() || 'https://api.openai.com/v1';
     const model = document.getElementById('modelSelect')?.value || 'gpt-4o-mini';
-    this.state.config = { apiKey, baseUrl, model };
+
+    this.state.config = {
+      ...this.state.config,
+      apiKey,
+      baseUrl,
+      model,
+    };
+
     localStorage.setItem('crab_config', JSON.stringify(this.state.config));
     this.showToast('✅ 配置已保存');
     this.toggleSettings();
@@ -302,7 +448,6 @@ const CrabApp = {
       </button>
     `).join('');
 
-    // 重新绑定事件
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
     });
