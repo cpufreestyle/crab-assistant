@@ -94,7 +94,9 @@ const CrabSkills = {
   async _doChat(params) {
     const { message, apiConfig } = params;
     if (!message) return { success: false, error: '消息不能为空' };
-    if (!apiConfig?.apiKey) return { success: false, error: '请先配置API密钥' };
+    // 本地 LM Studio 不需要密钥；云端 API 需要密钥
+    const isLocal = (apiConfig?.baseUrl || '').includes('localhost');
+    if (!isLocal && !apiConfig?.apiKey) return { success: false, error: '请先配置API密钥' };
 
     // 获取相关记忆
     const relevantMemories = CrabMemory.search(message, 3);
@@ -113,12 +115,12 @@ const CrabSkills = {
 ${relevantMemories.length > 0 ? relevantMemories.map(m => `[${m.category}] ${m.content}`).join('\n') : '无相关记忆'}`;
 
     try {
+      const headers = { 'Content-Type': 'application/json' };
+      if (apiConfig.apiKey) headers['Authorization'] = `Bearer ${apiConfig.apiKey}`;
+
       const response = await fetch(`${apiConfig.baseUrl}/chat/completions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiConfig.apiKey}`,
-        },
+        headers,
         body: JSON.stringify({
           model: apiConfig.model || 'gpt-4o',
           messages: [
