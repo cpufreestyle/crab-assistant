@@ -35,7 +35,7 @@ const CrabApp = {
 
 我是你的全能AI助手，融合了四大开源项目的精华：
 • 🦞 OpenClaw - 多渠道Gateway
-• ☤ Hermes - 自学习智能体
+• ☤ Hermes Agent (NousResearch) - 真正的Hermes智能体
 • 🏛️ Memory Palace - 持久记忆
 • 🤖 Claude Code - Agentic编程
 
