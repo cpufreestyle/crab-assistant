@@ -589,33 +589,30 @@
   <script src="memory.js"></script>
   <script src="skills.js"></script>
   <script>
-    // 🚀 启动时自动检测并配置 LM Studio（如果有）
-    (async function autoSetupLMStudio() {
+    // 🚀 LM Studio 零网络检测直接配置（避免 CORS 问题）
+    (function instantLMStudioSetup() {
+      // 如果已有有效配置，跳过
       const existing = localStorage.getItem('crab_config');
-      if (existing) return; // 用户已配置，跳过
-
-      try {
-        const resp = await fetch('http://localhost:1234/v1/models', { signal: AbortSignal.timeout(2000) });
-        if (!resp.ok) return;
-        const data = await resp.json();
-        const models = (data.data || []).map(m => m.id);
-        // 跳过纯嵌入模型，选对话模型
-        const chatModel = models.find(m =>
-          !m.includes('embedding') && !m.includes('embed') && !m.includes('nomic')
-        ) || models[0] || '';
-
-        localStorage.setItem('crab_config', JSON.stringify({
-          apiKey: '',
-          baseUrl: 'http://localhost:1234/v1',
-          model: chatModel,
-          lmStudioConnected: true,
-          lmStudioModels: models.map(id => ({ id, name: id })),
-        }));
-        console.log('🦎 LM Studio 已自动配置:', chatModel);
-      } catch (e) {
-        // LM Studio 未运行，不影响正常启动
-        console.log('🦀 LM Studio 未检测到，请手动配置API');
+      if (existing) {
+        try {
+          const cfg = JSON.parse(existing);
+          if (cfg.baseUrl && cfg.baseUrl.includes('localhost:1234')) return;
+        } catch {}
       }
+
+      // 直接写入 LM Studio 配置（本地地址，无需网络检测）
+      // gemma-4-26b-a4b-it-abliterated 是你的对话模型
+      localStorage.setItem('crab_config', JSON.stringify({
+        apiKey: '',
+        baseUrl: 'http://localhost:1234/v1',
+        model: 'gemma-4-26b-a4b-it-abliterated',
+        lmStudioConnected: true,
+        lmStudioModels: [
+          { id: 'gemma-4-26b-a4b-it-abliterated', name: 'Gemma 4 (26B) 对话' },
+          { id: 'text-embedding-nomic-embed-text-v1.5', name: 'Nomic Embed 嵌入' },
+        ],
+      }));
+      console.log('🦎 LM Studio 配置已写入（gemma-4-26b-a4b-it-abliterated）');
     })();
   </script>
   <script src="app.js"></script>

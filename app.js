@@ -78,35 +78,25 @@ const CrabApp = {
     });
   },
 
-  // ========== LM Studio 检测 ==========
-  async checkLMStudio() {
-    try {
-      const resp = await fetch('http://localhost:1234/v1/models', {
-        signal: AbortSignal.timeout(3000),
-      });
-      if (resp.ok) {
-        const data = await resp.json();
-        this.state.config.lmStudioConnected = true;
-        this.state.config.lmStudioModels = (data.data || []).map(m => ({
-          id: m.id,
-          name: m.id,
-        }));
-        this.updateLMStudioIndicator(true);
-      } else {
-        this.state.config.lmStudioConnected = false;
-        this.updateLMStudioIndicator(false);
-      }
-    } catch {
-      this.state.config.lmStudioConnected = false;
-      this.updateLMStudioIndicator(false);
-    }
-  },
-
+  // ========== LM Studio 状态（读 localStorage，不发网络请求避免 CORS） ==========
   updateLMStudioIndicator(connected) {
     const indicator = document.getElementById('lmStudioIndicator');
     if (indicator) {
       indicator.textContent = connected ? '🟢 LM Studio 已连接' : '🔴 LM Studio 未运行';
       indicator.style.color = connected ? '#22c55e' : '#ef4444';
+    }
+  },
+
+  checkLMStudio() {
+    // 直接从 localStorage 读取配置中的状态，不发网络请求
+    try {
+      const cfg = JSON.parse(localStorage.getItem('crab_config') || '{}');
+      const connected = cfg.lmStudioConnected === true && cfg.baseUrl?.includes('localhost:1234');
+      this.state.config.lmStudioConnected = connected;
+      if (cfg.lmStudioModels) this.state.config.lmStudioModels = cfg.lmStudioModels;
+      this.updateLMStudioIndicator(connected);
+    } catch {
+      this.updateLMStudioIndicator(false);
     }
   },
 

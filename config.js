@@ -1,12 +1,20 @@
 // 🦀 螃蟹助手 - 配置文件
+// 架构：前端 Web UI + Hermes Agent (NousResearch) 后端 + LM Studio 本地模型
 
 const CRAB_CONFIG = {
   // 应用信息
   app: {
     name: '螃蟹助手',
-    version: '0.2.0',
+    version: '0.2.1',
     emoji: '🦀',
-    tagline: '钳住一切，记忆永恒'
+    tagline: '钳住一切，记忆永恒',
+    // 核心架构
+    architecture: {
+      frontend: '螃蟹助手 Web UI (PWA)',
+      agent: 'Hermes Agent (NousResearch) ☤',
+      llm: 'LM Studio / Ollama 本地模型',
+      note: 'NOT HybridClaw - 使用真正的 Hermes Agent'
+    }
   },
 
   // API 配置 - 支持 OpenAI 兼容接口（多模型切换）
@@ -17,8 +25,9 @@ const CRAB_CONFIG = {
     model: '',         // 默认模型
     // 预设模型列表
     presets: [
-      // ===== 本地模型 =====
+      // ===== 本地模型 (推荐) =====
       { id: 'lm-studio', name: '🦎 LM Studio (本地)', provider: 'lm-studio', baseUrl: 'http://localhost:1234/v1', model: '', icon: '🦎' },
+      { id: 'ollama', name: '🦙 Ollama (本地)', provider: 'ollama', baseUrl: 'http://localhost:11434/v1', model: '', icon: '🦙' },
       // ===== OpenAI =====
       { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
       { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai' },
@@ -32,6 +41,16 @@ const CRAB_CONFIG = {
       { id: 'glm-4', name: '智谱GLM-4', provider: 'zhipu' },
       { id: 'moonshot-v1-8k', name: 'Moonshot (Kimi)', provider: 'moonshot' },
     ]
+  },
+
+  // Hermes Agent 配置
+  hermes: {
+    enabled: true,
+    source: 'NousResearch/hermes-agent',
+    description: 'The agent that grows with you - 真正的 Hermes Agent',
+    installPath: '~/hermes-agent',  // 或 C:\Users\<user>\hermes-agent
+    cli: 'hermes',
+    features: ['memory', 'skills', 'tools', 'compression'],
   },
 
   // 记忆系统配置

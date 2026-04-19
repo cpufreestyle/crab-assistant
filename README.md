@@ -1,6 +1,34 @@
 # 🦀 螃蟹助手
 
-> 融合 OpenClaw + Hermes + Memory Palace + Claude Code 的全能AI助手
+> 融合 OpenClaw + **Hermes Agent (NousResearch)** + Memory Palace + Claude Code 的全能AI助手
+
+## 🏗️ 架构说明
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     🦀 螃蟹助手                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Web UI     │  │  记忆宫殿     │  │  Skills 插件 │      │
+│  │  (PWA)       │  │  (本地存储)   │  │  (模块化)    │      │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
+│         │                 │                  │              │
+│         └─────────────────┼──────────────────┘              │
+│                           ▼                                 │
+│              ┌─────────────────────────┐                    │
+│              │  ☤ Hermes Agent         │                    │
+│              │  (NousResearch)         │                    │
+│              │  - 真正的 Hermes Agent  │                    │
+│              │  - 记忆 + 工具 + Skills │                    │
+│              └───────────┬─────────────┘                    │
+│                          ▼                                  │
+│              ┌─────────────────────────┐                    │
+│              │  🦎 LM Studio / Ollama  │                    │
+│              │  (本地 LLM 模型)         │                    │
+│              └─────────────────────────┘                    │
+└─────────────────────────────────────────────────────────────┘
+
+⚠️ 注意：使用真正的 Hermes Agent (NousResearch)，不是 HybridClaw
+```
 
 ## ✨ 特性
 
@@ -49,7 +77,9 @@ crab-assistant/
 | 项目 | 来源 | 说明 |
 |------|------|------|
 | 🦞 OpenClaw | [GitHub](https://github.com/openclaw/openclaw) | 多渠道 Gateway + Skills 系统 |
-| ☤ Hermes | [HybridAIOne/hybridclaw](https://github.com/HybridAIOne/hybridclaw) | 企业级自学习智能体 |
+| ☤ **Hermes Agent** | **[NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent)** | **真正的 Hermes Agent - The agent that grows with you** |
+| 🏛️ Memory Palace | 本地实现 | 持久记忆 + 混合检索 |
+| 🤖 Claude Code | Anthropic | Agentic 编程范式 |
 | 🏛️ Memory Palace | 持久记忆 OS | 混合检索 + 快照机制 |
 | 🤖 Claude Code | Anthropic | Agentic 编程模式 |
 
