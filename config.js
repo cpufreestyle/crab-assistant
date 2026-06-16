@@ -68,10 +68,18 @@ const CRAB_CONFIG = {
     builtin: [
       { id: 'chat', name: '💬 对话', desc: '与AI自由对话' },
       { id: 'memory', name: '🏛️ 记忆宫殿', desc: '存储和检索长期记忆' },
+      { id: 'gbrain', name: '🧠 大脑', desc: 'gbrain AI 知识图谱查询' },
       { id: 'code', name: '🤖 代码助手', desc: 'Agentic编程辅助' },
       { id: 'search', name: '🔍 联网搜索', desc: '搜索互联网信息' },
       { id: 'todo', name: '📋 待办管理', desc: '管理任务和提醒' },
     ]
+  },
+
+  // gbrain 配置（AI 记忆大脑）
+  gbrain: {
+    enabled: false,
+    bridgeUrl: 'http://localhost:3101',
+    description: 'gbrain AI 知识图谱记忆引擎',
   },
 
   // LM Studio 配置提示

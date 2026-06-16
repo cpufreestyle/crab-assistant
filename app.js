@@ -164,7 +164,7 @@ const CrabApp = {
     const inputArea = document.getElementById('inputArea');
     const headerTitle = document.getElementById('headerTitle');
 
-    const tabNames = { chat: '💬 对话', memory: '🏛️ 记忆宫殿', code: '🤖 代码助手', search: '🔍 搜索', todo: '📋 待办' };
+    const tabNames = { chat: '💬 对话', memory: '🏛️ 记忆宫殿', gbrain: '🧠 大脑', code: '🤖 代码助手', search: '🔍 搜索', todo: '📋 待办' };
 
     if (tab === 'memory') {
       chatArea.style.display = 'none';
@@ -172,9 +172,19 @@ const CrabApp = {
       inputArea.style.display = 'none';
       headerTitle.textContent = tabNames[tab] || '🦀 螃蟹助手';
       this.loadMemoryList();
+    } else if (tab === 'gbrain') {
+      chatArea.style.display = 'none';
+      memoryPanel.style.display = 'none';
+      const gbrainPanel = document.getElementById('gbrainPanel');
+      if (gbrainPanel) gbrainPanel.style.display = 'block';
+      inputArea.style.display = 'none';
+      headerTitle.textContent = '🧠 大脑';
+      this.loadGbrainPage();
     } else {
       chatArea.style.display = 'block';
       memoryPanel.style.display = 'none';
+      const gbrainPanel = document.getElementById('gbrainPanel');
+      if (gbrainPanel) gbrainPanel.style.display = 'none';
       inputArea.style.display = 'block';
       headerTitle.textContent = tabNames[tab] || '💬 对话';
     }
@@ -329,6 +339,22 @@ const CrabApp = {
           6. 返回这里选择「🦎 LM Studio」即可使用
         </div>
 
+        <!-- 🧠 gbrain 配置 -->
+        <div style="background:#1a1a2a;border:1px solid #8b5cf633;border-radius:8px;padding:12px;margin:8px 0;">
+          <label style="font-size:13px;font-weight:500;color:#a78bfa;display:flex;align-items:center;gap:6px;">
+            🧠 gbrain 桥接服务器
+          </label>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="text" id="gbrainBridgeUrl" value="http://localhost:3101"
+              style="flex:1;padding:10px 12px;background:#252525;border:1px solid #2d2d2d;border-radius:8px;color:white;font-size:13px;">
+            <button onclick="CrabApp.testGbrain()" style="padding:10px 16px;background:#8b5cf6;border:none;border-radius:8px;color:white;cursor:pointer;font-size:12px;">测试</button>
+          </div>
+          <div style="font-size:11px;color:#888;margin-top:4px;">
+            💡 启动桥接服务器：<code style="background:#1a1a1a;padding:2px 6px;border-radius:4px;">node gbrain-server.js</code>
+          </div>
+          <div id="gbrainBridgeStatus" style="font-size:12px;margin-top:4px;"></div>
+        </div>
+
         <button class="save-btn" id="saveSettingsBtn">💾 保存配置</button>
         <button class="save-btn" style="background:#252525;margin-top:8px;" onclick="CrabApp.toggleSettings()">关闭</button>
       `;
@@ -402,6 +428,22 @@ const CrabApp = {
     this.toggleSettings();
   },
 
+  // 🧠 gbrain 连接测试
+  async testGbrain() {
+    const url = document.getElementById('gbrainBridgeUrl')?.value?.trim() || 'http://localhost:3101';
+    GbrainClient.saveConfig(url);
+    this.showToast('🔄 测试 gbrain 连接中...');
+    const result = await GbrainClient.checkHealth();
+    const statusEl = document.getElementById('gbrainBridgeStatus');
+    if (statusEl) {
+      if (GbrainClient.connected) {
+        statusEl.innerHTML = `<span style="color:#86efac;">✅ 已连接 — ${GbrainClient.version}</span>`;
+      } else {
+        statusEl.innerHTML = `<span style="color:#fca5a5;">❌ 连接失败：${result.error || '无法连接'}</span>`;
+      }
+    }
+  },
+
   loadConfig() {
     try {
       const saved = localStorage.getItem('crab_config');
@@ -461,6 +503,117 @@ const CrabApp = {
         </div>
       </div>
     `).join('');
+  },
+
+  // ========== 🧠 大脑 ==========
+
+  async loadGbrainPage() {
+    const panel = document.getElementById('gbrainPanel');
+    if (!panel) return;
+
+    // 尝试连接 gbrain
+    const health = await GbrainClient.checkHealth();
+    const statusEl = document.getElementById('gbrainStatus');
+    const querySection = document.getElementById('gbrainQuerySection');
+    const detailEl = document.getElementById('gbrainDetail');
+
+    if (statusEl) {
+      if (GbrainClient.connected) {
+        statusEl.innerHTML = `
+          <div style="background:#0a2a0a;border:1px solid #22c55e33;border-radius:12px;padding:20px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:8px;">🧠</div>
+            <div style="font-size:18px;font-weight:600;color:#86efac;">gbrain 已连接</div>
+            <div style="font-size:13px;color:#a3a3a3;margin-top:4px;">${GbrainClient.version}</div>
+            <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;">
+              <button onclick="CrabApp.doCrabQuery()" style="background:#8b5cf6;border:none;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:500;">🔍 综合查询</button>
+              <button onclick="CrabApp.doGbrainSearch()" style="background:#252525;border:1px solid #2d2d2d;color:white;padding:10px 20px;border-radius:8px;cursor:pointer;font-weight:500;">📝 搜索页面</button>
+            </div>
+          </div>`;
+        if (querySection) querySection.style.display = 'block';
+      } else {
+        statusEl.innerHTML = `
+          <div style="background:#2a0a0a;border:1px solid #ef444433;border-radius:12px;padding:20px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:8px;">🧠</div>
+            <div style="font-size:16px;font-weight:600;color:#fca5a5;">gbrain 未连接</div>
+            <div style="font-size:13px;color:#a3a3a3;margin-top:8px;">
+              请先启动桥接服务器：<br>
+              <code style="background:#1a1a1a;padding:2px 8px;border-radius:4px;">node gbrain-server.js</code>
+            </div>
+          </div>`;
+        if (querySection) querySection.style.display = 'none';
+      }
+    }
+
+    // 加载统计
+    if (GbrainClient.connected) {
+      this.refreshGbrainStats();
+    }
+  },
+
+  async refreshGbrainStats() {
+    const detailEl = document.getElementById('gbrainDetail');
+    if (!detailEl) return;
+    const stats = await GbrainClient.getStats();
+    if (stats.success && stats.data) {
+      const s = stats.data;
+      detailEl.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;">
+          <div style="background:#1e1e1e;border:1px solid #2d2d2d;border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#8b5cf6;">${s.pageCount || s.total_pages || '?'}</div>
+            <div style="font-size:12px;color:#888;">页面</div>
+          </div>
+          <div style="background:#1e1e1e;border:1px solid #2d2d2d;border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#8b5cf6;">${s.entityCount || s.total_entities || '?'}</div>
+            <div style="font-size:12px;color:#888;">实体</div>
+          </div>
+          <div style="background:#1e1e1e;border:1px solid #2d2d2d;border-radius:12px;padding:16px;text-align:center;">
+            <div style="font-size:24px;font-weight:700;color:#8b5cf6;">${s.edgeCount || s.total_edges || '?'}</div>
+            <div style="font-size:12px;color:#888;">关系</div>
+          </div>
+        </div>`;
+    }
+  },
+
+  doGbrainSearch() {
+    const query = document.getElementById('gbrainSearchInput')?.value?.trim();
+    if (!query) { this.showToast('请输入搜索关键词'); return; }
+    this.showToast('🔍 搜索中...');
+    GbrainClient.search(query).then(result => {
+      if (result.success && result.data) {
+        this.showGbrainResult(JSON.stringify(result.data, null, 2));
+      } else if (result.success && result.data === undefined && result.data === null) {
+        this.showGbrainResult('未找到结果');
+      } else {
+        this.showGbrainResult(result.data || '搜索完成');
+      }
+    }).catch(err => {
+      this.showGbrainResult(`❌ 搜索失败: ${err.message}`);
+    });
+  },
+
+  doCrabQuery() {
+    const question = document.getElementById('gbrainQueryInput')?.value?.trim();
+    if (!question) { this.showToast('请输入问题'); return; }
+    this.showToast('🧠 查询中...');
+    GbrainClient.query(question).then(result => {
+      if (result.success) {
+        this.showGbrainResult(result.answer || result.data || '查询完成');
+      } else {
+        this.showGbrainResult(result.answer || result.data || `❌ 查询失败`);
+      }
+    }).catch(err => {
+      this.showGbrainResult(`❌ 查询失败: ${err.message}`);
+    });
+  },
+
+  showGbrainResult(content) {
+    const el = document.getElementById('gbrainResult');
+    if (el) {
+      el.style.display = 'block';
+      el.innerHTML = `<div style="background:#1e1e1e;border:1px solid #2d2d2d;border-radius:12px;padding:16px;">
+        <pre style="white-space:pre-wrap;font-size:14px;line-height:1.6;font-family:'Noto Sans SC',sans-serif;margin:0;">${this.escapeHtml(content)}</pre>
+      </div>`;
+    }
   },
 
   // ========== 工具 ==========

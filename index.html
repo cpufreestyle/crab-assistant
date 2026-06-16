@@ -567,6 +567,43 @@
         </div>
       </div>
 
+      <!-- 🧠 大脑视图 -->
+      <div class="memory-panel" id="gbrainPanel">
+        <div id="gbrainStatus">
+          <div class="empty-state">🔄 连接中...</div>
+        </div>
+
+        <div id="gbrainQuerySection" style="display:none;max-width:800px;">
+          <!-- 统计 -->
+          <div id="gbrainDetail" style="margin-bottom:24px;"></div>
+
+          <!-- 综合查询 -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:14px;font-weight:600;color:#8b5cf6;margin-bottom:8px;">🧠 综合查询</div>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="gbrainQueryInput" placeholder="问 gbrain 任何问题（返回综合答案）..." 
+                style="flex:1;padding:12px 16px;background:#1a1a1a;border:1px solid #2d2d2d;border-radius:8px;color:white;font-size:14px;"
+                onkeydown="if(event.key==='Enter')CrabApp.doCrabQuery()">
+              <button onclick="CrabApp.doCrabQuery()" style="padding:12px 20px;background:#8b5cf6;border:none;border-radius:8px;color:white;cursor:pointer;font-weight:500;">🔍 查询</button>
+            </div>
+          </div>
+
+          <!-- 关键词搜索 -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:14px;font-weight:600;color:#a3a3a3;margin-bottom:8px;">📝 关键词搜索</div>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="gbrainSearchInput" placeholder="输入关键词搜索大脑页面..." 
+                style="flex:1;padding:12px 16px;background:#1a1a1a;border:1px solid #2d2d2d;border-radius:8px;color:white;font-size:14px;"
+                onkeydown="if(event.key==='Enter')CrabApp.doGbrainSearch()">
+              <button onclick="CrabApp.doGbrainSearch()" style="padding:12px 20px;background:#252525;border:1px solid #2d2d2d;border-radius:8px;color:white;cursor:pointer;font-weight:500;">🔍 搜索</button>
+            </div>
+          </div>
+
+          <!-- 结果展示 -->
+          <div id="gbrainResult" style="display:none;"></div>
+        </div>
+      </div>
+
       <!-- 输入区 -->
       <div class="input-area" id="inputArea">
         <div class="input-wrapper">
@@ -587,6 +624,7 @@
 
   <script src="config.js"></script>
   <script src="memory.js"></script>
+  <script src="gbrain.js"></script>
   <script src="skills.js"></script>
   <script>
     // 🚀 LM Studio 零网络检测直接配置（避免 CORS 问题）

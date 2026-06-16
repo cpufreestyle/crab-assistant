@@ -21,6 +21,14 @@ const CrabSkills = {
       enabled: true,
     },
     {
+      id: 'gbrain',
+      name: '🧠 大脑',
+      desc: 'gbrain AI 知识图谱查询',
+      icon: '🧠',
+      color: '#8b5cf6',
+      enabled: true,
+    },
+    {
       id: 'code',
       name: '🤖 代码助手',
       desc: 'Agentic编程辅助',
@@ -81,6 +89,8 @@ const CrabSkills = {
         return await this._doCode(params);
       case 'search':
         return await this._doSearch(params);
+      case 'gbrain':
+        return await this._doGbrain(action, params);
       case 'todo':
         return await this._doTodo(action, params);
       default:
@@ -207,6 +217,57 @@ ${relevantMemories.length > 0 ? relevantMemories.map(m => `[${m.category}] ${m.c
       ],
       note: '联网搜索功能需要接入搜索API'
     };
+  },
+
+  // 🧠 gbrain 大脑
+  async _doGbrain(action, params) {
+    const { query, question, slug, content } = params || {};
+
+    // 优先使用 GbrainClient（如果桥接服务器在线）
+    if (typeof GbrainClient !== 'undefined') {
+      switch (action) {
+        case 'query':
+          if (!question) return { success: false, error: 'question 不能为空' };
+          return await GbrainClient.query(question);
+
+        case 'search':
+          if (!query) return { success: false, error: 'query 不能为空' };
+          return await GbrainClient.search(query);
+
+        case 'health':
+          return await GbrainClient.checkHealth();
+
+        case 'stats':
+          return await GbrainClient.getStats();
+
+        case 'list':
+          return await GbrainClient.listPages();
+
+        case 'get':
+          if (!slug) return { success: false, error: 'slug 不能为空' };
+          return await GbrainClient.getPage(slug);
+
+        case 'save':
+          if (!slug || !content) return { success: false, error: 'slug 和 content 不能为空' };
+          return await GbrainClient.savePage(slug, content);
+
+        case 'brainstorm':
+          if (!question) return { success: false, error: 'question 不能为空' };
+          return await GbrainClient.brainstorm(question);
+
+        case 'graph':
+          if (!slug) return { success: false, error: 'slug 不能为空' };
+          return await GbrainClient.graph(slug);
+
+        case 'embed':
+          return await GbrainClient.embed();
+
+        default:
+          return { success: false, error: '未知操作' };
+      }
+    }
+
+    return { success: false, error: 'GbrainClient 未加载' };
   },
 
   // 📋 待办管理
